@@ -50,7 +50,7 @@
                 <img src="../assets/logo.png" alt="" class="flex-none w-12 h-12 rounded-full border border-slate-200">
             </div> 
             <form action="" class="w-full px-4 relative">
-                <textarea v-model="userTweetData.text" placeholder="What's Up" class="mt-3 pb-3 w-full focus:outline-none"/>
+                <textarea v-model="newTweet" placeholder="What's Up" class="mt-3 pb-3 w-full focus:outline-none"/>
                 <div class="flex items-center">
                     <font-awesome-icon icon="fa-solid fa-image" class="text-lg text-blue-500 mr-4"/>
                     <font-awesome-icon icon="fa-solid fa-film" class="text-lg text-blue-500 mr-4"/>
@@ -67,12 +67,43 @@
             <div class="flex-none mr-4">
                 <img src="../assets/logo.png" alt="" class="h-12 w-12 rounded-full flex-none">
             </div>
+            <TransitionRoot as="template" :show="user == activeEdit">
+                <Dialog as="div" class="relative z-10" @close="activeEdit = null">
+                <TransitionChild as="template" enter="ease-out duration-300" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-200" leave-from="opacity-100" leave-to="opacity-0">
+                    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+                </TransitionChild>
+
+                <div class="fixed inset-0 z-10 overflow-y-auto">
+                    <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                    <TransitionChild as="template" enter="ease-out duration-300" enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-200" leave-from="opacity-100 translate-y-0 sm:scale-100" leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+                        <DialogPanel class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                            <!-- <div class="sm:flex sm:items-start"> -->
+                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                                <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900">Edit Tweet</DialogTitle>
+                                <div class="mt-2">
+                                    <textarea v-model="UesrDatas[index].text" class="mt-3 pb-3 w-full focus:outline-none"/>
+                                    <!-- <input type="text" class="text-sm text-gray-500" > -->
+                                </div>
+                            </div>
+                            <!-- </div> -->
+                        </div>
+                        <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                            <button type="button" class="inline-flex w-full justify-center rounded-md border border-transparent bg-blue-400 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm" @click="doneEdit(index)">Submit Edit</button>
+                            <button type="button" class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm" @click="activeEdit = null" ref="cancelButtonRef">Cancel</button>
+                        </div>
+                        </DialogPanel>
+                    </TransitionChild>
+                    </div>
+                </div>
+                </Dialog>
+        </TransitionRoot>
             <div class="w-full">
                 <div class="flex items-center w-full">
                     <p class="font-semibold">{{user.name}}</p>
                     <p class="text-sm text-grey-400 ml-2">{{user.username}}</p>
                     <p class="text-sm text-grey-400 ml-2">{{user.location}}</p>
-                    <font-awesome-icon icon="fa-solid fa-pencil" class="ml-auto text-gray-400 "/>
+                    <font-awesome-icon icon="fa-solid fa-pencil" class="ml-auto text-gray-400 " @click="editTweet(user)"/>
                 </div>
                 <p class="py-2">
                     {{UesrDatas[index].text}}
@@ -96,6 +127,7 @@
                 </div>
             </div>
         </div>
+       
    </div>
    <!-- right part -->
    <div class="md:block hidden w-1/3 h-full border-l border-slate-200 py-2 px-6 overflow-y-scroll relative">
@@ -122,28 +154,31 @@
 </template>
 <script>
 import { Popover} from '@headlessui/vue'
+import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 
 export default{
     name:'homePage',
     data(){
         return{
-            user:{
+            user1:{
                 username: "Jolie_Ferne_boy",
                 location: "Sweden",
                 name: "Jolie Ferne",
                 id: "0007"
             },
-            userTweetData:{
-            author_id: "0007",
-            text: " "
-        },
             search:'',
             users:[],
             UesrDatas:[],
+            activeEdit:null,
         }
     },
     components:{
         Popover,
+        Dialog,
+        DialogPanel,
+        DialogTitle,
+        TransitionChild,
+        TransitionRoot
     },
     created(){
         fetch('https://tweets.free.beeceptor.com/tweets/all').then((response) => {
@@ -176,9 +211,25 @@ export default{
         deleteTweet(indx){
             this.users.splice(indx,1)
         },
-        addNewTweet(){
-            this.UesrDatas.unshift(this.userTweetData)
-            this.users.unshift(this.user)
+        editTweet(user) {
+            this.activeEdit = user
+        },
+        doneEdit(index) {
+      if (!this.activeEdit) {
+        return
+      }
+      this.activeEdit = null
+      this.UesrDatas[index].text = this.UesrDatas[index].text.trim()
+    },
+        addNewTweet(e){
+            let tweet=this.newTweet.trim()
+            this.UesrDatas.unshift({
+                author_id: "2605707936",
+                text:tweet
+            })
+            this.users.unshift(this.user1)
+            this.newTweet=""
+            e.preventDefault()
         }
     }
    

@@ -40,7 +40,18 @@ export default{
         }
     },
     created(){
-        fetch('https://tweets.free.beeceptor.com/profile').then(res=>res.json()).then(result=>this.personalInfo=result)
+      fetch('https://tweets.free.beeceptor.com/profile').then((response) => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Something went wrong');
+            })
+            .then((result) => {
+              this.personalInfo=result
+            })
+            .catch((error) => {
+                console.log(error)
+            });
     }
 }
 </script>
